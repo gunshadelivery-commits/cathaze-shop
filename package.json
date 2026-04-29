@@ -1,0 +1,25 @@
+{
+  "name": "cathaze-shop",
+  "version": "2.0.0",
+  "description": "CATHAZE SHOP - ระบบสั่งซื้อสินค้าออนไลน์",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "vite": "^5.2.11"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.2",
+    "chart.js": "^4.4.2",
+    "papaparse": "^5.4.1"
+  }
+}
