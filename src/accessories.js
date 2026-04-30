@@ -281,7 +281,16 @@ async function submitOrder() {
                 mapUrl: map, items: orderItems, total: subtotal, slipUrl: imgData.data.url, status: "รอดำเนินการ"
             })
         });
-        const lineMsg = `ออเดอร์อุปกรณ์! [${SHOP_NAME}] เบอร์: ${phone} ยอดรวม: ${subtotal} ฿ สลิป: ${imgData.data.url}`;
+        const itemsDetail = cart.map(i => `- ${i.name.toUpperCase()} x${i.qty}`).join('\n');
+        const lineMsg = `🌿 ออเดอร์อุปกรณ์! [${SHOP_NAME} v${SHOP_VERSION}]
+📞 เบอร์: ${phone}
+📍 พิกัดจัดส่ง: ${map}
+
+🛒 รายการ:
+${itemsDetail}
+💰 ยอดรวม: ${subtotal.toLocaleString()} บาท
+
+🖼️ สลิป: ${imgData.data.url}`;
         currentLineUrl = buildLineUrl(lineMsg);
         document.getElementById('finalOrderTotal').textContent = subtotal.toLocaleString() + " ฿";
         document.getElementById('successModal').classList.remove('hidden');

@@ -393,8 +393,17 @@ async function submitOrder() {
             })
         });
 
-        // 3. To LINE (Short Version to avoid truncation)
-        const lineMsg = `ออเดอร์ใหม่! [${SHOP_NAME}] เบอร์: ${data.phone} ยอดรวม: ${subtotal} ฿ สลิป: ${imgData.data.url}`;
+        // 3. To LINE (Premium Version)
+        const itemsDetail = cart.map(i => `- ${i.name.toUpperCase()} [${i.size}] x${i.qty}`).join('\n');
+        const lineMsg = `🌿 ออเดอร์ใหม่! [${SHOP_NAME} v${SHOP_VERSION}]
+📞 เบอร์: ${data.phone}
+📍 พิกัดจัดส่ง: ${data.map}
+
+🛒 รายการ:
+${itemsDetail}
+💰 ยอดรวม: ${subtotal.toLocaleString()} บาท
+
+🖼️ สลิป: ${imgData.data.url}`;
         
         // --- CELEBRATION ---
         document.getElementById('finalOrderTotal').textContent = subtotal.toLocaleString() + " ฿";

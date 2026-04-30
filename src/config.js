@@ -54,6 +54,12 @@ export const BASE_PATH = "/cathaze-shop/";
  * @returns {string} LINE URL scheme
  */
 export function buildLineUrl(message) {
+    if (LINE_OA_ID) {
+        // Use direct OA message scheme to avoid the "Share with" picker
+        const encodedId = encodeURIComponent(LINE_OA_ID);
+        return `https://line.me/R/oaMessage/${encodedId}/?${encodeURIComponent(message)}`;
+    }
+    // Fallback to share scheme if no OA ID is provided
     return `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
 }
 
