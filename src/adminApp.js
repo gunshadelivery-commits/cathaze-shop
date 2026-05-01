@@ -172,57 +172,6 @@ function processSales() {
             }
         }
     });
-    // --- DEMO MODE (ชั่วคราวเพื่อเทส) ---
-    totalLife = 125400;
-    totalMonth = 48500 + Math.random() * 5000;
-    totalWeek = 12400 + Math.random() * 2000;
-    countMonth = 84; countWeek = 22;
-    for (let i = 0; i < 14; i++) {
-        const d = new Date(); d.setDate(now.getDate() - i);
-        const key = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-        dailyStats[key] = 2500 + Math.random() * 4000;
-    }
-    const mockProducts = { "Wedding Cake": 30, "Miami Madness": 25, "Ghost Train Haze": 18, "Green Crack": 12 };
-    Object.assign(productCounts, mockProducts);
-
-    // จำลองรายการออเดอร์ล่าสุด (แก้ไขหัวข้อให้ตรงกับระบบ)
-    const demoOrders = [
-        {
-            "วันที่-เวลา": new Date().toLocaleString('th-TH'),
-            "ชื่อลูกค้า": "คุณสมชาย",
-            "เบอร์โทร": "081-234-5678",
-            "ที่อยู่": "กทม. เขตพระนคร",
-            "ยอดรวม": "1250",
-            "สถานะ": "ชำระเงินแล้ว",
-            "รายการสินค้า": "Wedding Cake (1G) x2",
-            "ลิงก์สลิป": "https://via.placeholder.com/150",
-            "ลิงก์แผนที่": "https://www.google.com/maps"
-        },
-        {
-            "วันที่-เวลา": new Date(Date.now() - 3600000).toLocaleString('th-TH'),
-            "ชื่อลูกค้า": "คุณวิภา",
-            "เบอร์โทร": "099-888-7777",
-            "ที่อยู่": "นนทบุรี อ.เมือง",
-            "ยอดรวม": "450",
-            "สถานะ": "รอดำเนินการ",
-            "รายการสินค้า": "Miami Madness (1G) x1",
-            "ลิงก์สลิป": "https://via.placeholder.com/150",
-            "ลิงก์แผนที่": "https://www.google.com/maps"
-        },
-        {
-            "วันที่-เวลา": new Date(Date.now() - 7200000).toLocaleString('th-TH'),
-            "ชื่อลูกค้า": "คุณมานะ",
-            "เบอร์โทร": "088-777-6666",
-            "ที่อยู่": "ปทุมธานี",
-            "ยอดรวม": "2100",
-            "สถานะ": "ชำระเงินแล้ว",
-            "รายการสินค้า": "Ghost Train Haze (1G) x3",
-            "ลิงก์สลิป": "https://via.placeholder.com/150",
-            "ลิงก์แผนที่": "https://www.google.com/maps"
-        }
-    ];
-    rawOrders = [...rawOrders, ...demoOrders];
-    // ----------------------------
 
     document.getElementById('monthlyTotal').textContent = totalMonth.toLocaleString() + " ฿";
     document.getElementById('monthlyCount').textContent = `${countMonth} รายการ`;
