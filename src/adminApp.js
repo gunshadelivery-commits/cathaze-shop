@@ -163,19 +163,28 @@ function processSales() {
     const productCounts = {}, dailyStats = {};
     rawOrders.forEach(order => {
         let orderDate = new Date();
-        const dateStr = order["วันที่-เวลา"];
+        const dateStr = (order["วันที่-เวลา"] || "").toString().trim();
         if (dateStr) {
-            const parts = dateStr.split(' ');
+            const cleanDateStr = dateStr.replace(/,/g, '');
+            const parts = cleanDateStr.split(' ');
             if (parts[0] && parts[0].includes('/')) {
                 const dp = parts[0].split('/');
                 if (dp.length === 3) {
-                    const timePart = parts[1] || '00:00:00';
-                    orderDate = new Date(`${dp[2]}-${dp[1]}-${dp[0]}T${timePart}`);
+                    const yyyy = dp[2];
+                    const mm = dp[1].padStart(2, '0');
+                    const dd = dp[0].padStart(2, '0');
+                    
+                    let timePart = parts[1] || '00:00:00';
+                    timePart = timePart.split(':').map(t => t.padStart(2, '0')).join(':');
+                    if (timePart.length === 5) timePart += ':00';
+                    
+                    orderDate = new Date(`${yyyy}-${mm}-${dd}T${timePart}`);
                 }
             } else {
-                orderDate = new Date(dateStr);
+                orderDate = new Date(cleanDateStr);
             }
         }
+        if (isNaN(orderDate.getTime())) orderDate = new Date(); // Fallback for safety
         const total = parseFloat(order["ยอดรวม"]) || 0;
         if (order["สถานะ"] === "ชำระเงินแล้ว") {
             totalLife += total;
