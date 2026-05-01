@@ -32,7 +32,7 @@ function doPost(e) {
 
     // --- CASE 1: Log new order ---
     if (action === "log") {
-      sheetOrders.insertRowBefore(2);
+      sheetOrders.insertRowAfter(1);
       var newRow = [
         new Date(),
         contents.name,
