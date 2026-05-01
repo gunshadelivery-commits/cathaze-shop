@@ -148,7 +148,10 @@ function loadData() {
     if (!ORDERS_CSV_URL) { document.getElementById('monthlyTotal').textContent = "⚙️ ยังไม่ได้ตั้งค่า"; return; }
     Papa.parse(ORDERS_CSV_URL + "&t=" + Date.now(), {
         download: true, header: true, skipEmptyLines: true,
-        complete: (results) => { rawOrders = results.data; processSales(); }
+        complete: (results) => { 
+            rawOrders = results.data.filter(order => order["วันที่-เวลา"] && order["ชื่อลูกค้า"]); 
+            processSales(); 
+        }
     });
 }
 
