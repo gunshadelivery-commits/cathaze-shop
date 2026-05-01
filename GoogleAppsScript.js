@@ -72,6 +72,18 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // --- CASE 2: Update status ---
+    if (action === "updateStatus") {
+      var data = sheetOrders.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][1].toString().trim() == contents.name.toString().trim() && data[i][7].toString().trim() == contents.slipUrl.toString().trim()) {
+          sheetOrders.getRange(i + 1, 9).setValue(contents.status);
+          return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ "result": "error", "message": "Order not found" })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // --- CASE 3: Add new product ---
     if (action === "addProduct") {
       sheetProducts.appendRow([

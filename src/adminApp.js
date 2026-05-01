@@ -162,7 +162,20 @@ function processSales() {
     let totalLife = 0, totalMonth = 0, totalWeek = 0, countMonth = 0, countWeek = 0;
     const productCounts = {}, dailyStats = {};
     rawOrders.forEach(order => {
-        const orderDate = new Date(order["วันที่-เวลา"]);
+        let orderDate = new Date();
+        const dateStr = order["วันที่-เวลา"];
+        if (dateStr) {
+            const parts = dateStr.split(' ');
+            if (parts[0] && parts[0].includes('/')) {
+                const dp = parts[0].split('/');
+                if (dp.length === 3) {
+                    const timePart = parts[1] || '00:00:00';
+                    orderDate = new Date(`${dp[2]}-${dp[1]}-${dp[0]}T${timePart}`);
+                }
+            } else {
+                orderDate = new Date(dateStr);
+            }
+        }
         const total = parseFloat(order["ยอดรวม"]) || 0;
         if (order["สถานะ"] === "ชำระเงินแล้ว") {
             totalLife += total;
