@@ -88,7 +88,8 @@ function loadProductsFromSheet(callback) {
         if (grid) grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-10">⚙️ กรุณาตั้งค่า Google Sheets ในหน้า Admin ก่อน</div>`;
         return;
     }
-    Papa.parse(SHEET_CSV_URL, {
+    const cacheBuster = (SHEET_CSV_URL.includes('?') ? '&' : '?') + `nocache=${Math.random()}&t=${Date.now()}`;
+    Papa.parse(SHEET_CSV_URL + cacheBuster, {
         download: true, header: true,
         complete: function(results) {
             const data = results.data;
@@ -386,7 +387,7 @@ async function submitOrder() {
         let subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
 
         await fetch(GAS_URL, {
-            method: 'POST', mode: 'no-cors',
+            method: 'POST',
             body: JSON.stringify({
                 action: "log", name: data.name, phone: data.phone, address: data.address,
                 mapUrl: data.map, items: orderItems, itemsArray: itemsArray, total: subtotal, slipUrl: imgData.data.url, status: "รอดำเนินการ"

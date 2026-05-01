@@ -32,7 +32,42 @@ function doPost(e) {
 
     // --- CASE 1: Log new order ---
     if (action === "log") {
-      sheetOrders.appendRow([new Date(), contents.name, contents.phone, contents.address, contents.mapUrl, contents.items, contents.total, contents.slipUrl, "รอดำเนินการ"]);
+      sheetOrders.insertRowBefore(2);
+      var newRow = [
+        new Date(),
+        contents.name,
+        contents.phone,
+        contents.address,
+        contents.mapUrl,
+        contents.items,
+        contents.total,
+        contents.slipUrl,
+        "รอดำเนินการ"
+      ];
+      sheetOrders.getRange(2, 1, 1, newRow.length).setValues([newRow]);
+
+      // ตัดสต็อกสินค้า
+      if (contents.itemsArray) {
+        var products = sheetProducts.getDataRange().getValues();
+        contents.itemsArray.forEach(function(item) {
+          for (var i = 1; i < products.length; i++) {
+            if (products[i][0].toString().trim() == item.name.toString().trim() && products[i][1].toString().trim() == item.size.toString().trim()) {
+              var currentStock = parseInt(products[i][7]) || 0;
+              var currentSold = parseInt(products[i][8]) || 0;
+              var newStock = currentStock - item.qty;
+              var newSold = currentSold + item.qty;
+              sheetProducts.getRange(i + 1, 8).setValue(newStock);
+              sheetProducts.getRange(i + 1, 9).setValue(newSold);
+              
+              if (newStock <= 0) {
+                sheetProducts.getRange(i + 1, 7).setValue("หมด");
+              }
+              break;
+            }
+          }
+        });
+      }
+
       return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
     }
 
