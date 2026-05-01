@@ -36,7 +36,7 @@ function doPost(e) {
       var newRow = [
         new Date(),
         contents.name,
-        contents.phone,
+        "'" + contents.phone,
         contents.address,
         contents.mapUrl,
         contents.items,

@@ -19,7 +19,7 @@ export const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1K3ISAk-bpZ
 // --- Google Sheets Orders CSV URL ---
 // URL สำหรับดึงข้อมูล Orders (ต้องระบุ gid ของ sheet "Orders")
 // format: https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={ORDERS_SHEET_GID}
-export const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1K3ISAk-bpZv8csZyNy-H4Gl5XIVkmDJvHSJD1Wd2wo4/export?format=csv&gid=1378763860";
+export const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1K3ISAk-bpZv8csZyNy-H4Gl5XIVkmDJvHSJD1Wd2wo4/export?format=csv&gid=314414074";
 
 // --- Google Apps Script (GAS) Web App URL ---
 // วิธีหา: ใน Google Apps Script Editor > Deploy > New Deployment > Web App > Copy URL
