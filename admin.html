@@ -66,6 +66,7 @@
                 <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
                     <button onclick="switchTab('overview')" id="tab-overview" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-emerald-600">📊 สรุปยอดขาย</button>
                     <button onclick="switchTab('products')" id="tab-products" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-emerald-600">📦 จัดการสินค้า</button>
+                    <button onclick="switchTab('settings')" id="tab-settings" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-emerald-600">⚙️ ตั้งค่าระบบ</button>
                 </div>
                 <div class="flex items-center gap-4">
                     <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition text-sm">Logout</button>
@@ -168,6 +169,77 @@
                         <tbody id="productTableBody" class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
+            </div>
+        </main>
+
+        <!-- SETTINGS TAB -->
+        <main id="view-settings" class="hidden max-w-6xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+            <h2 class="text-2xl font-bold text-slate-800">ตั้งค่าระบบร้านค้า</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Payment Settings -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 text-lg">💰 ข้อมูลการรับชำระเงิน</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">ชื่อบัญชี</label>
+                            <input type="text" id="setAccountName" class="w-full border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="เช่น นายสมชาย ใจดี">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">ธนาคาร</label>
+                            <input type="text" id="setBank" class="w-full border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="เช่น กสิกรไทย">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">เลขบัญชี</label>
+                            <input type="text" id="setAccountNo" class="w-full border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="เช่น 123-4-56789-0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">QR Code รับเงิน (อัปโหลดรูปภาพ)</label>
+                            <input type="hidden" id="setQrUrl">
+                            <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition flex flex-col items-center justify-center group"
+                                onclick="document.getElementById('setQrInput').click()">
+                                <input type="file" id="setQrInput" accept="image/*" class="hidden"
+                                    onchange="previewSettingsQr(this)">
+                                <img id="settingsQrPreviewImg" class="hidden h-32 w-auto object-contain mb-2 rounded-lg shadow-sm border border-slate-200">
+                                <div id="setQrPreviewText" class="flex flex-col items-center">
+                                    <span class="text-3xl mb-1">📸</span>
+                                    <p class="text-xs text-slate-500 font-medium group-hover:text-emerald-600">กดเพื่ออัปโหลด QR Code</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Settings -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 text-lg">🚚 ข้อมูลการจัดส่ง</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">ค่าส่งต่อกิโลเมตร (บาท)</label>
+                            <input type="number" id="setDeliveryRate" class="w-full border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="เช่น 10">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">พิกัดร้านค้า (Latitude)</label>
+                            <input type="text" id="setShopLat" class="w-full border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="เช่น 13.7563">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">พิกัดร้านค้า (Longitude)</label>
+                            <input type="text" id="setShopLng" class="w-full border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="เช่น 100.5018">
+                            <p class="text-[10px] text-slate-400 mt-1">* หากไม่มีการตั้งค่าพิกัด ลูกค้าจะพิมพ์ที่อยู่จัดส่งเอง และค่าส่งจะเริ่มต้นที่ 0 บาท</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="saveSettings()" id="saveSettingsBtn" class="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition">
+                    💾 บันทึกการตั้งค่า
+                </button>
+            </div>
+            
+            <div class="mt-8 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-4 text-lg">🔧 สถานะการเชื่อมต่อระบบ</h3>
+                <div id="settingsContent" class="space-y-3"></div>
             </div>
         </main>
     </div>

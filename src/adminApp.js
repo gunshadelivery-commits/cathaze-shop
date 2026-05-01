@@ -121,7 +121,7 @@ function switchTab(tabId) {
     const activeBtn = document.getElementById('tab-' + tabId);
     if (activeBtn) activeBtn.classList.add('bg-white', 'shadow-sm', 'text-emerald-600');
     if (tabId === 'products') loadProducts();
-    else if (tabId === 'settings') renderSettings();
+    else if (tabId === 'settings') { renderSettings(); loadSettings(); }
     else loadData();
 }
 
@@ -474,6 +474,95 @@ function renderSettings() {
         html += `<div class="p-4 rounded-2xl border ${statusColor} flex justify-between items-center"><div><p class="font-bold text-sm">${statusIcon} ${item.label}</p><p class="text-xs opacity-70 mt-1">${item.value}</p></div></div>`;
     });
     container.innerHTML = html;
+}
+
+// --- SETTINGS LOGIC ---
+async function loadSettings() {
+    try {
+        const res = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "getSettings" })
+        });
+        const json = await res.json();
+        if (json.result === 'success' && json.data) {
+            document.getElementById('setAccountName').value = json.data.accountName || "";
+            document.getElementById('setBank').value = json.data.bank || "";
+            document.getElementById('setAccountNo').value = json.data.accountNo || "";
+            document.getElementById('setQrUrl').value = json.data.qrUrl || "";
+            if (json.data.qrUrl) {
+                document.getElementById('settingsQrPreviewImg').src = json.data.qrUrl;
+                document.getElementById('settingsQrPreviewImg').classList.remove('hidden');
+                document.getElementById('setQrPreviewText').querySelector('p').innerText = "เปลี่ยนรูป QR Code";
+            }
+            document.getElementById('setDeliveryRate').value = json.data.deliveryRate || "";
+            document.getElementById('setShopLat').value = json.data.shopLat || "";
+            document.getElementById('setShopLng').value = json.data.shopLng || "";
+        }
+    } catch (e) {
+        console.error("Error loading settings:", e);
+    }
+}
+
+window.previewSettingsQr = function(input) {
+    if (input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('settingsQrPreviewImg').src = e.target.result;
+            document.getElementById('settingsQrPreviewImg').classList.remove('hidden');
+            document.getElementById('setQrPreviewText').querySelector('p').innerText = "เปลี่ยนรูป QR Code";
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+window.saveSettings = async function() {
+    const btn = document.getElementById('saveSettingsBtn');
+    btn.disabled = true;
+    btn.innerHTML = "กำลังบันทึก...";
+    
+    let qrUrl = document.getElementById('setQrUrl').value;
+    const fileInput = document.getElementById('setQrInput');
+    const imgbbUrl = getImgbbUploadUrl();
+    
+    if (fileInput.files.length > 0 && imgbbUrl) {
+        try {
+            btn.innerHTML = "กำลังอัปโหลด QR...";
+            const optimizedImg = await compressImage(fileInput.files[0]);
+            const formData = new FormData(); formData.append('image', optimizedImg);
+            const imgRes = await fetch(imgbbUrl, { method: 'POST', body: formData });
+            const imgData = await imgRes.json();
+            if (imgData.success) qrUrl = imgData.data.url;
+        } catch (e) {
+            console.error("QR Upload Fail", e);
+            showToast("อัปโหลด QR ล้มเหลว", "error");
+        }
+    }
+    
+    btn.innerHTML = "กำลังบันทึกข้อมูล...";
+    
+    const settingsData = {
+        accountName: document.getElementById('setAccountName').value,
+        bank: document.getElementById('setBank').value,
+        accountNo: document.getElementById('setAccountNo').value,
+        qrUrl: qrUrl,
+        deliveryRate: document.getElementById('setDeliveryRate').value,
+        shopLat: document.getElementById('setShopLat').value,
+        shopLng: document.getElementById('setShopLng').value
+    };
+
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "updateSettings", data: settingsData })
+        });
+        showToast("บันทึกการตั้งค่าสำเร็จ", "success");
+    } catch (e) {
+        console.error("Error saving settings:", e);
+        showToast("เกิดข้อผิดพลาดในการบันทึก", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "💾 บันทึกการตั้งค่า";
+    }
 }
 
 // === EXPOSE GLOBALS ===

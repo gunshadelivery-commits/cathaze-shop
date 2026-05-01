@@ -2,13 +2,13 @@ function doPost(e) {
   try {
     var ss;
     var sheetID = "1K3ISAk-bpZv8csZyNy-H4Gl5XIVkmDJvHSJD1Wd2wo4";
-    
+
     try {
       ss = SpreadsheetApp.openById(sheetID);
-    } catch(err) {
+    } catch (err) {
       ss = SpreadsheetApp.getActiveSpreadsheet();
     }
-    
+
     if (!ss) throw new Error("Could not find Spreadsheet. Please check ID.");
 
     // Get Product sheet: try by name first, then by index 0
@@ -23,12 +23,49 @@ function doPost(e) {
     var contents;
     try {
       contents = JSON.parse(e.postData.contents);
-    } catch(err) {
+    } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({ "result": "error", "message": "Invalid JSON" }))
         .setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     var action = contents.action || "log";
+
+    // --- CASE: getSettings ---
+    if (action === "getSettings") {
+      var sheetSettings = ss.getSheetByName("Settings");
+      if (!sheetSettings) {
+        return ContentService.createTextOutput(JSON.stringify({ "result": "success", "data": {} })).setMimeType(ContentService.MimeType.JSON);
+      }
+      var data = sheetSettings.getDataRange().getValues();
+      var settings = {};
+      for (var i = 0; i < data.length; i++) {
+        if (data[i][0]) settings[data[i][0]] = data[i][1];
+      }
+      return ContentService.createTextOutput(JSON.stringify({ "result": "success", "data": settings })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- CASE: updateSettings ---
+    if (action === "updateSettings") {
+      var sheetSettings = ss.getSheetByName("Settings");
+      if (!sheetSettings) {
+        sheetSettings = ss.insertSheet("Settings");
+      } else {
+        sheetSettings.clear();
+      }
+      var rows = [];
+      for (var key in contents.data) {
+        var val = contents.data[key];
+        // ป้องกัน Google Sheets ตัดเลข 0 ข้างหน้าหาย (เช่น เบอร์โทร, เลขบัญชี)
+        if (typeof val === 'string' && val.match(/^[0-9]+$/)) {
+          val = "'" + val;
+        }
+        rows.push([key, val]);
+      }
+      if (rows.length > 0) {
+        sheetSettings.getRange(1, 1, rows.length, 2).setValues(rows);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // --- CASE 1: Log new order ---
     if (action === "log") {
@@ -50,7 +87,7 @@ function doPost(e) {
       // ตัดสต็อกสินค้า
       if (contents.itemsArray) {
         var products = sheetProducts.getDataRange().getValues();
-        contents.itemsArray.forEach(function(item) {
+        contents.itemsArray.forEach(function (item) {
           for (var i = 1; i < products.length; i++) {
             if (products[i][0].toString().trim() == item.name.toString().trim() && products[i][1].toString().trim() == item.size.toString().trim()) {
               var currentStock = parseInt(products[i][7]) || 0;
@@ -59,7 +96,7 @@ function doPost(e) {
               var newSold = currentSold + item.qty;
               sheetProducts.getRange(i + 1, 8).setValue(newStock);
               sheetProducts.getRange(i + 1, 9).setValue(newSold);
-              
+
               if (newStock <= 0) {
                 sheetProducts.getRange(i + 1, 7).setValue("หมด");
               }
@@ -87,7 +124,7 @@ function doPost(e) {
     // --- CASE 3: Add new product ---
     if (action === "addProduct") {
       sheetProducts.appendRow([
-        contents.name, contents.size, contents.price, contents.note, contents.image, 
+        contents.name, contents.size, contents.price, contents.note, contents.image,
         contents.tags, contents.status || "มีของ", contents.stock || 0, contents.sold_count || 0, contents.category || ""
       ]);
       return ContentService.createTextOutput(JSON.stringify({ "result": "success" })).setMimeType(ContentService.MimeType.JSON);
@@ -116,7 +153,7 @@ function doPost(e) {
       var data = sheetProducts.getDataRange().getValues();
       var targetName = contents.name ? contents.name.toString().trim() : "";
       var targetSize = contents.size ? contents.size.toString().trim() : "";
-      
+
       for (var i = 1; i < data.length; i++) {
         if (data[i][0].toString().trim() == targetName && data[i][1].toString().trim() == targetSize) {
           sheetProducts.deleteRow(i + 1);

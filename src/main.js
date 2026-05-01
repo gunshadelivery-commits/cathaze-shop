@@ -303,7 +303,121 @@ function updateQty(idx, change) {
 }
 
 // --- CHECKOUT ---
-function goToCheckout() { document.getElementById('checkoutModal').classList.remove('hidden'); }
+// --- NEW: Settings & Map Logic ---
+let shopSettings = null;
+let deliveryFee = 0;
+let mapInstance = null;
+let markerInstance = null;
+
+async function loadSettings() {
+    try {
+        const res = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "getSettings" })
+        });
+        const json = await res.json();
+        if (json.result === 'success' && json.data) {
+            shopSettings = json.data;
+        }
+    } catch (e) {
+        console.error("Failed to load settings");
+    }
+}
+
+function goToCheckout() { 
+    document.getElementById('checkoutModal').classList.remove('hidden'); 
+    
+    // Setup Map
+    if(!mapInstance) {
+        // Default to Bangkok or Shop Lat Lng
+        let lat = shopSettings && shopSettings.shopLat ? parseFloat(shopSettings.shopLat) : 13.7563;
+        let lng = shopSettings && shopSettings.shopLng ? parseFloat(shopSettings.shopLng) : 100.5018;
+        
+        mapInstance = L.map('mapContainer').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(mapInstance);
+        
+        mapInstance.on('click', function(e) {
+            updatePinAndFee(e.latlng.lat, e.latlng.lng);
+        });
+    } else {
+        setTimeout(() => mapInstance.invalidateSize(), 100);
+    }
+    
+    updatePaymentUI();
+}
+
+function updatePinAndFee(lat, lng) {
+    if(markerInstance) mapInstance.removeLayer(markerInstance);
+    markerInstance = L.marker([lat, lng]).addTo(mapInstance);
+    
+    document.getElementById('custLat').value = lat;
+    document.getElementById('custLng').value = lng;
+    document.getElementById('custMap').value = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    // Calculate distance and fee
+    if (shopSettings && shopSettings.shopLat && shopSettings.shopLng && shopSettings.deliveryRate) {
+        let shopLat = parseFloat(shopSettings.shopLat);
+        let shopLng = parseFloat(shopSettings.shopLng);
+        let rate = parseFloat(shopSettings.deliveryRate);
+        
+        let distKm = getDistanceFromLatLonInKm(shopLat, shopLng, lat, lng);
+        deliveryFee = Math.ceil(distKm * rate);
+        document.getElementById('deliveryFeeText').innerText = deliveryFee + " ฿ (ระยะทาง " + distKm.toFixed(1) + " กม.)";
+    } else {
+        deliveryFee = 0;
+        document.getElementById('deliveryFeeText').innerText = "0 ฿ (ไม่ได้ตั้งค่าพิกัดร้าน/ค่าส่ง)";
+    }
+    updatePaymentUI();
+}
+
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);
+  var dLon = deg2rad(lon2-lon1); 
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) { return deg * (Math.PI/180); }
+
+function updatePaymentUI() {
+    let subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+    let finalTotal = subtotal + deliveryFee;
+    
+    const paymentBox = document.getElementById('paymentInfoBox');
+    const details = document.getElementById('paymentDetails');
+    const totalEl = document.getElementById('finalTotalPay');
+    const qrContainer = document.getElementById('qrCodeContainer');
+    const qrImg = document.getElementById('promptpayQr');
+    
+    if (shopSettings && (shopSettings.accountNo || shopSettings.qrUrl)) {
+        paymentBox.classList.remove('hidden');
+        totalEl.innerText = `(รวมสุทธิ ${finalTotal.toLocaleString()} ฿)`;
+        
+        let html = '';
+        if(shopSettings.bank) html += `<div>ธนาคาร: <b>${shopSettings.bank}</b></div>`;
+        if(shopSettings.accountName) html += `<div>ชื่อบัญชี: <b>${shopSettings.accountName}</b></div>`;
+        if(shopSettings.accountNo) html += `<div>เลขบัญชี: <b class="text-emerald-600">${shopSettings.accountNo}</b></div>`;
+        
+        details.innerHTML = html;
+        
+        if (shopSettings.qrUrl) {
+            qrContainer.classList.remove('hidden');
+            qrImg.src = shopSettings.qrUrl;
+        } else {
+            qrContainer.classList.add('hidden');
+        }
+    }
+}
+
 function closeCheckout() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
 function previewSlip(input) {
@@ -316,43 +430,29 @@ function previewSlip(input) {
     }
 }
 
-// --- NEW: Geolocation Helper ---
-function getCurrentLocation(event) {
+function getCurrentLocationMap(event) {
     const btn = event.currentTarget;
     const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
+    btn.innerHTML = `⏳...`;
+    
     if (!navigator.geolocation) {
-        showToast("เบราว์เซอร์ของคุณไม่รองรับการระบุพิกัด", "error");
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        showToast("เบราว์เซอร์ไม่รองรับ", "error");
+        btn.disabled = false; btn.innerHTML = originalText;
         return;
     }
-
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-            document.getElementById('custMap').value = mapUrl;
-            btn.disabled = false;
-            btn.innerHTML = "✅ สำเร็จ!";
-            showToast("ดึงพิกัดปัจจุบันเรียบร้อย!");
-            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-        },
-        (err) => {
-            let msg = "ไม่สามารถดึงพิกัดได้ กรุณากดอนุญาตการเข้าถึงตำแหน่ง";
-            if (err.code === 1) msg = "กรุณาอนุญาตการเข้าถึงตำแหน่ง (Permission Denied)";
-            else if (err.code === 2) msg = "ไม่พบสัญญาณตำแหน่ง (Position Unavailable)";
-            else if (err.code === 3) msg = "การค้นหาพิกัดใช้เวลานานเกินไป (Timeout)";
-
-            showToast(msg, "error");
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Increased timeout to 10s
-    );
+    
+    navigator.geolocation.getCurrentPosition(pos => {
+        let lat = pos.coords.latitude;
+        let lng = pos.coords.longitude;
+        mapInstance.setView([lat, lng], 15);
+        updatePinAndFee(lat, lng);
+        btn.disabled = false; btn.innerHTML = "✅ สำเร็จ!";
+        setTimeout(() => btn.innerHTML = originalText, 2000);
+    }, err => {
+        showToast("ไม่สามารถดึงพิกัดได้", "error");
+        btn.disabled = false; btn.innerHTML = originalText;
+    });
 }
 
 async function submitOrder() {
@@ -383,14 +483,16 @@ async function submitOrder() {
 
         // 2. Log to Sheet
         let orderItems = cart.map(i => `${i.name} [${i.size}] x${i.qty}`).join(', ');
+        if (deliveryFee > 0) orderItems += `, ค่าจัดส่ง: ${deliveryFee} ฿`;
         let itemsArray = cart.map(i => ({ name: i.name, size: i.size, qty: i.qty }));
         let subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+        let finalTotal = subtotal + deliveryFee;
 
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "log", name: data.name, phone: data.phone, address: data.address,
-                mapUrl: data.map, items: orderItems, itemsArray: itemsArray, total: subtotal, slipUrl: imgData.data.url, status: "รอดำเนินการ"
+                mapUrl: data.map, items: orderItems, itemsArray: itemsArray, total: finalTotal, slipUrl: imgData.data.url, status: "รอดำเนินการ"
             })
         });
 
@@ -402,12 +504,12 @@ async function submitOrder() {
 
 🛒 รายการ:
 ${itemsDetail}
-💰 ยอดรวม: ${subtotal.toLocaleString()} บาท
+${deliveryFee > 0 ? `🚚 ค่าจัดส่ง: ${deliveryFee} ฿\n` : ''}💰 ยอดรวม: ${finalTotal.toLocaleString()} บาท
 
 🖼️ สลิป: ${imgData.data.url}`;
         
         // --- CELEBRATION ---
-        document.getElementById('finalOrderTotal').textContent = subtotal.toLocaleString() + " ฿";
+        document.getElementById('finalOrderTotal').textContent = finalTotal.toLocaleString() + " ฿";
         document.getElementById('successModal').classList.remove('hidden');
         
         // Store LINE URL for manual redirect if needed
@@ -444,7 +546,7 @@ window.updateQty = updateQty;
 window.goToCheckout = goToCheckout;
 window.closeCheckout = closeCheckout;
 window.previewSlip = previewSlip;
-window.getCurrentLocation = getCurrentLocation;
+window.getCurrentLocationMap = getCurrentLocationMap;
 window.submitOrder = submitOrder;
 window.redirectToLine = () => {
     if (currentLineUrl) window.open(currentLineUrl, '_blank');
@@ -454,4 +556,5 @@ window.redirectToLine = () => {
 // Setup input listeners to avoid parameter passing issues
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromSheet(renderProducts);
+    loadSettings();
 });
