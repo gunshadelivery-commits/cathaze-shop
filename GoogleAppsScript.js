@@ -33,8 +33,9 @@ function doPost(e) {
     // --- CASE 1: Log new order ---
     if (action === "log") {
       sheetOrders.insertRowAfter(1);
+      var formattedDate = Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss");
       var newRow = [
-        new Date(),
+        formattedDate,
         contents.name,
         "'" + contents.phone,
         contents.address,

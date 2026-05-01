@@ -204,7 +204,7 @@ function renderOrdersTable() {
     const body = document.getElementById('orderTableBody'); 
     if(!body) return;
     body.innerHTML = "";
-    const reversedOrders = [...rawOrders].reverse();
+    const reversedOrders = [...rawOrders];
     const totalPages = Math.ceil(reversedOrders.length / ITEMS_PER_PAGE);
     if(currentPage > Math.min(totalPages, MAX_PAGES)) currentPage = 1;
     if(totalPages === 0) currentPage = 1;
